@@ -1,0 +1,36 @@
+{
+  "name": "@familyctx/react",
+  "version": "0.1.0",
+  "description": "React bindings for FamilyCtx",
+  "homepage": "https://github.com/familyctx/react#readme",
+  "bugs": {
+    "url": "https://github.com/familyctx/react/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/familyctx/react.git"
+  },
+  "license": "MIT",
+  "author": "Preston Arnold <prestonarnold.uk>",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@familyctx/core": "^0.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
