@@ -3,11 +3,13 @@ import {
   getChildProfiles,
   getParentProfile,
   isParentMode,
+  switchProfile,
   type FamilyCtxState,
   type Profile,
+  type ProfileId,
 } from "@familyctx/core";
 import { useFamilyCtxStore } from "./context";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // Base hook for subscription to state
 export function useFamilyCtxState(): FamilyCtxState {
@@ -46,3 +48,14 @@ export function useIsParentMode(): boolean {
 }
 
 // Action
+export function useSwitchProfile() {
+  const store = useFamilyCtxStore();
+  return useCallback(
+    (profileId: ProfileId) => {
+      const currentState = store.getState();
+      const nextState = switchProfile(currentState, profileId);
+      store.setState(nextState);
+    },
+    [store],
+  );
+}
