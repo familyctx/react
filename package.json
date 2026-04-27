@@ -27,10 +27,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
-  "dependencies": {
-    "@familyctx/core": "^0.1.0"
-  },
   "peerDependencies": {
-    "react": ">=18"
+    "react": ">=18",
+    "@familyctx/core": "^0.1.0"
   }
 }
