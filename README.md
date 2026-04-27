@@ -5,7 +5,7 @@ React bindings for FamilyContext.
 ## Installation
 
 ```bash
-npm install @familyctx/react @familyctx/core react
+npm install @familyctx/react @familyctx/core
 ```
 
 ## Usage
