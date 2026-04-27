@@ -20,7 +20,7 @@ import {
   type Profile,
   type ProfileId,
 } from "@familyctx/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFamilyCtxStore } from "./context";
 
 // Base hook for subscription to state
@@ -38,33 +38,77 @@ export function useFamilyCtxState(): FamilyCtxState {
   return state;
 }
 
-// Selector hooks
+// Selector hook with equality check to prevent unnecessary re-renders
+export function useSelector<T>(
+  selector: (state: FamilyCtxState) => T,
+  equalityFn: (a: T, b: T) => boolean = Object.is,
+): T {
+  const store = useFamilyCtxStore();
+  const [selected, setSelected] = useState<T>(() => selector(store.getState()));
+  const selectorRef = useRef(selector);
+  const equalityFnRef = useRef(equalityFn);
+
+  // Keep refs up to date
+  selectorRef.current = selector;
+  equalityFnRef.current = equalityFn;
+
+  useEffect(() => {
+    const unsub = store.subscribe((newState) => {
+      const newSelected = selectorRef.current(newState);
+      setSelected((prev) => {
+        if (equalityFnRef.current(prev, newSelected)) {
+          return prev;
+        }
+        return newSelected;
+      });
+    });
+    return unsub;
+  }, [store]);
+
+  return selected;
+}
+
+// Shallow equality helper for arrays
+function shallowEqual<T>(a: T, b: T): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    return a.every((item, index) => Object.is(item, b[index]));
+  }
+  return false;
+}
+
+// Selector hooks using useSelector to prevent unnecessary re-renders
 export function useActiveProfile(): Profile | null {
-  const state = useFamilyCtxState();
-  return useMemo(() => getActiveProfile(state), [state]);
+  return useSelector(getActiveProfile);
 }
 
 export function useParentProfile(): Profile | null {
-  const state = useFamilyCtxState();
-  return useMemo(() => getParentProfile(state), [state]);
+  return useSelector(getParentProfile);
 }
 
 export function useChildProfiles(): Profile[] {
-  const state = useFamilyCtxState();
-  return useMemo(() => getChildProfiles(state), [state]);
+  return useSelector(getChildProfiles, shallowEqual);
 }
 
 export function useIsParentMode(): boolean {
-  const state = useFamilyCtxState();
-  return useMemo(() => isParentMode(state), [state]);
+  return useSelector(isParentMode);
 }
 
 export function useCanSwitchToProfile(profileId: ProfileId): boolean {
-  const state = useFamilyCtxState();
-  return useMemo(
-    () => canSwitchToProfile(state, profileId),
-    [state, profileId],
-  );
+  return useSelector((state) => canSwitchToProfile(state, profileId));
+}
+
+export function useAccount(): Account | null {
+  return useSelector((state) => state.account);
+}
+
+export function useProfiles(): Profile[] {
+  return useSelector((state) => state.profiles, shallowEqual);
+}
+
+export function useSession(): FamilyCtxState["session"] {
+  return useSelector((state) => state.session);
 }
 
 // Action hooks
@@ -94,6 +138,18 @@ export function useDisableParentMode() {
   return useCallback(() => {
     const currentState = store.getState();
     const nextState = disableParentMode(currentState);
+    store.setState(nextState);
+  }, [store]);
+}
+
+export function useToggleParentMode() {
+  const store = useFamilyCtxStore();
+  return useCallback(() => {
+    const currentState = store.getState();
+    const isCurrentlyParentMode = isParentMode(currentState);
+    const nextState = isCurrentlyParentMode
+      ? disableParentMode(currentState)
+      : enableParentMode(currentState);
     store.setState(nextState);
   }, [store]);
 }
@@ -165,32 +221,4 @@ export function useStartSession() {
     },
     [store],
   );
-}
-
-// Convenience hooks
-export function useAccount(): Account | null {
-  const state = useFamilyCtxState();
-  return state.account;
-}
-
-export function useProfiles(): Profile[] {
-  const state = useFamilyCtxState();
-  return state.profiles;
-}
-
-export function useSession(): FamilyCtxState["session"] {
-  const state = useFamilyCtxState();
-  return state.session;
-}
-
-export function useToggleParentMode() {
-  const store = useFamilyCtxStore();
-  return useCallback(() => {
-    const currentState = store.getState();
-    const isCurrentlyParentMode = isParentMode(currentState);
-    const nextState = isCurrentlyParentMode
-      ? disableParentMode(currentState)
-      : enableParentMode(currentState);
-    store.setState(nextState);
-  }, [store]);
 }
