@@ -20,7 +20,7 @@ import {
   type Profile,
   type ProfileId,
 } from "@familyctx/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFamilyCtxStore } from "./context";
 
 // Base hook for subscription to state
@@ -78,7 +78,7 @@ function shallowEqual<T>(a: T, b: T): boolean {
   return false;
 }
 
-// Selector hooks using useSelector to prevent unnecessary re-renders
+// Selector hooks - all reads
 export function useActiveProfile(): Profile | null {
   return useSelector(getActiveProfile);
 }
@@ -111,114 +111,44 @@ export function useSession(): FamilyCtxState["session"] {
   return useSelector((state) => state.session);
 }
 
-// Action hooks
-export function useSwitchProfile() {
+// Actions hook - all writes
+export function useActions() {
   const store = useFamilyCtxStore();
-  return useCallback(
-    (profileId: ProfileId) => {
-      const currentState = store.getState();
-      const nextState = switchProfile(currentState, profileId);
-      store.setState(nextState);
-    },
-    [store],
-  );
-}
 
-export function useEnableParentMode() {
-  const store = useFamilyCtxStore();
-  return useCallback(() => {
-    const currentState = store.getState();
-    const nextState = enableParentMode(currentState);
-    store.setState(nextState);
-  }, [store]);
-}
-
-export function useDisableParentMode() {
-  const store = useFamilyCtxStore();
-  return useCallback(() => {
-    const currentState = store.getState();
-    const nextState = disableParentMode(currentState);
-    store.setState(nextState);
-  }, [store]);
-}
-
-export function useToggleParentMode() {
-  const store = useFamilyCtxStore();
-  return useCallback(() => {
-    const currentState = store.getState();
-    const isCurrentlyParentMode = isParentMode(currentState);
-    const nextState = isCurrentlyParentMode
-      ? disableParentMode(currentState)
-      : enableParentMode(currentState);
-    store.setState(nextState);
-  }, [store]);
-}
-
-export function useClearSession() {
-  const store = useFamilyCtxStore();
-  return useCallback(() => {
-    const currentState = store.getState();
-    const nextState = clearSession(currentState);
-    store.setState(nextState);
-  }, [store]);
-}
-
-export function useSetAccount() {
-  const store = useFamilyCtxStore();
-  return useCallback(
-    (account: Account) => {
-      const currentState = store.getState();
-      const nextState = setAccount(currentState, account);
-      store.setState(nextState);
-    },
-    [store],
-  );
-}
-
-export function useSetProfiles() {
-  const store = useFamilyCtxStore();
-  return useCallback(
-    (profiles: Profile[]) => {
-      const currentState = store.getState();
-      const nextState = setProfiles(currentState, profiles);
-      store.setState(nextState);
-    },
-    [store],
-  );
-}
-
-export function useAddProfile() {
-  const store = useFamilyCtxStore();
-  return useCallback(
-    (profile: Profile) => {
-      const currentState = store.getState();
-      const nextState = addProfile(currentState, profile);
-      store.setState(nextState);
-    },
-    [store],
-  );
-}
-
-export function useRemoveProfile() {
-  const store = useFamilyCtxStore();
-  return useCallback(
-    (profileId: ProfileId) => {
-      const currentState = store.getState();
-      const nextState = removeProfile(currentState, profileId);
-      store.setState(nextState);
-    },
-    [store],
-  );
-}
-
-export function useStartSession() {
-  const store = useFamilyCtxStore();
-  return useCallback(
-    (accountId: AccountId, deviceId?: DeviceId) => {
-      const currentState = store.getState();
-      const nextState = startSession(currentState, accountId, deviceId);
-      store.setState(nextState);
-    },
+  return useMemo(
+    () => ({
+      profile: {
+        switch: (profileId: ProfileId) =>
+          store.setState(switchProfile(store.getState(), profileId)),
+        add: (profile: Profile) =>
+          store.setState(addProfile(store.getState(), profile)),
+        remove: (profileId: ProfileId) =>
+          store.setState(removeProfile(store.getState(), profileId)),
+        setAll: (profiles: Profile[]) =>
+          store.setState(setProfiles(store.getState(), profiles)),
+      },
+      session: {
+        start: (accountId: AccountId, deviceId?: DeviceId) =>
+          store.setState(startSession(store.getState(), accountId, deviceId)),
+        clear: () => store.setState(clearSession(store.getState())),
+        enableParentMode: () =>
+          store.setState(enableParentMode(store.getState())),
+        disableParentMode: () =>
+          store.setState(disableParentMode(store.getState())),
+        toggleParentMode: () => {
+          const state = store.getState();
+          store.setState(
+            isParentMode(state)
+              ? disableParentMode(state)
+              : enableParentMode(state),
+          );
+        },
+      },
+      account: {
+        set: (account: Account) =>
+          store.setState(setAccount(store.getState(), account)),
+      },
+    }),
     [store],
   );
 }

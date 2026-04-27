@@ -1,4 +1,4 @@
-// export type * from "@familyctx/core";
+export type * from "@familyctx/core";
 
 export { FamilyCtxProvider } from "./context";
 
