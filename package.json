@@ -25,7 +25,7 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@familyctx/core": "^0.1.0"
